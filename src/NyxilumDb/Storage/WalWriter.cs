@@ -1,7 +1,7 @@
 using System.Buffers.Binary;
 using System.Text;
 
-namespace ArxDb.Storage;
+namespace NyxilumDb.Storage;
 
 // Пише WAL-файл: 8-байтний заголовок раз при створенні, далі кадри
 // (payloadLen+crc32+payload) для кожного Set/Delete. FsyncMode.Always

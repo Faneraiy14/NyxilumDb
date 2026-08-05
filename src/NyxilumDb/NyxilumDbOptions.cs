@@ -1,8 +1,8 @@
-using ArxDb.Storage;
+using NyxilumDb.Storage;
 
-namespace ArxDb;
+namespace NyxilumDb;
 
-public sealed class ArxDbOptions
+public sealed class NyxilumDbOptions
 {
     public FsyncMode FsyncMode { get; init; } = FsyncMode.Always;
 

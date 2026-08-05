@@ -1,4 +1,4 @@
-namespace ArxDb.Storage;
+namespace NyxilumDb.Storage;
 
 // CRC-32C (Castagnoli, поліном 0x1EDC6F41, той самий, що в iSCSI/ext4/
 // RocksDB) — потрібен, щоб виявити пошкоджений/обрізаний запис у WAL

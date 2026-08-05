@@ -1,8 +1,8 @@
 using System.Buffers.Binary;
 using System.Text;
-using ArxDb;
+using NyxilumDb;
 
-namespace ArxDb.Storage;
+namespace NyxilumDb.Storage;
 
 public enum WalOp : byte
 {
@@ -49,7 +49,7 @@ public readonly struct WalRecord
     public static WalRecord DecodePayload(ReadOnlySpan<byte> payload)
     {
         if (payload.Length < 2 + 4)
-            throw new ArxDbCorruptedException("WAL payload закороткий для заголовка запису");
+            throw new NyxilumDbCorruptedException("WAL payload закороткий для заголовка запису");
 
         int pos = 0;
         var op = (WalOp)payload[pos++];
@@ -57,13 +57,13 @@ public readonly struct WalRecord
         uint keyLen = BinaryPrimitives.ReadUInt32LittleEndian(payload.Slice(pos));
         pos += 4;
         if (pos + keyLen + 4 > (uint)payload.Length)
-            throw new ArxDbCorruptedException("WAL payload закороткий для ключа");
+            throw new NyxilumDbCorruptedException("WAL payload закороткий для ключа");
         var key = Encoding.UTF8.GetString(payload.Slice(pos, (int)keyLen));
         pos += (int)keyLen;
         uint valLen = BinaryPrimitives.ReadUInt32LittleEndian(payload.Slice(pos));
         pos += 4;
         if (pos + valLen > (uint)payload.Length)
-            throw new ArxDbCorruptedException("WAL payload закороткий для значення");
+            throw new NyxilumDbCorruptedException("WAL payload закороткий для значення");
         byte[]? value = valLen > 0 ? payload.Slice(pos, (int)valLen).ToArray() : (op == WalOp.Set ? [] : null);
 
         return new WalRecord { Op = op, Key = key, Value = value };

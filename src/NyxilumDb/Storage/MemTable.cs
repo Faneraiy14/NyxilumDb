@@ -1,4 +1,4 @@
-namespace ArxDb.Storage;
+namespace NyxilumDb.Storage;
 
 // SortedDictionary — уже збалансоване дерево (червоно-чорне), дає
 // O(log n) точкові операції І впорядкований обхід для range/prefix

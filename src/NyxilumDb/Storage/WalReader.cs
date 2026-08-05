@@ -1,7 +1,7 @@
 using System.Buffers.Binary;
-using ArxDb;
+using NyxilumDb;
 
-namespace ArxDb.Storage;
+namespace NyxilumDb.Storage;
 
 // Читає WAL і відтворює записи в порядку запису. Обрив посеред диска
 // (збій живлення/crash саме під час запису кадру) МАЄ виявлятись і
@@ -28,7 +28,7 @@ public static class WalReader
         if (fileLength < HeaderSize)
         {
             // Навіть заголовок не встиг дописатись — трактуємо як
-            // порожній WAL, а не помилку: викликач (ArxDb.Open)
+            // порожній WAL, а не помилку: викликач (NyxilumDb.Open)
             // перезапише заголовок при наступному відкритті на запис.
             return new ReplayResult([], 0, fileLength);
         }
@@ -36,7 +36,7 @@ public static class WalReader
         Span<byte> header = stackalloc byte[HeaderSize];
         stream.ReadExactly(header);
         if (header[0] != 'A' || header[1] != 'W' || header[2] != 'A' || header[3] != 'L')
-            throw new ArxDbCorruptedException($"WAL-файл має неправильну сигнатуру: {path}");
+            throw new NyxilumDbCorruptedException($"WAL-файл має неправильну сигнатуру: {path}");
 
         var records = new List<WalRecord>();
         long goodOffset = HeaderSize;
@@ -88,7 +88,7 @@ public static class WalReader
             {
                 record = WalRecord.DecodePayload(payload);
             }
-            catch (ArxDbCorruptedException)
+            catch (NyxilumDbCorruptedException)
             {
                 stream.Position = frameStart;
                 break;

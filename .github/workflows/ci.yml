@@ -8,10 +8,10 @@ on:
 
 jobs:
   test:
-    # ArxDb.Tests не має Windows-специфічних залежностей і не посилається
-    # на жоден сестринський репозиторій (на відміну від ArxLang) — єдина
-    # ОС достатня. ArxLang підключає ArxDb через ProjectReference, тож
-    # регресія тут інакше виявилась би лише непрямо, під час збірки ArxLang.
+    # NyxilumDb.Tests не має Windows-специфічних залежностей і не посилається
+    # на жоден сестринський репозиторій (на відміну від NyxilumLang) — єдина
+    # ОС достатня. NyxilumLang підключає NyxilumDb через ProjectReference, тож
+    # регресія тут інакше виявилась би лише непрямо, під час збірки NyxilumLang.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,7 +21,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Build
-        run: dotnet build src/ArxDb --configuration Release
+        run: dotnet build src/NyxilumDb --configuration Release
 
       - name: "Run test suite (24 перевірки: WAL, crash-recovery, компакція, конкурентність, fuzz)"
-        run: dotnet run --project tests/ArxDb.Tests --configuration Release
+        run: dotnet run --project tests/NyxilumDb.Tests --configuration Release

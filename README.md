@@ -1,4 +1,4 @@
-# ArxDb
+# NyxilumDb
 
 Легка embedded key-value база даних на C#/.NET з Write-Ahead Log (WAL)
 для довговічності — натхненна внутрішнім устроєм Redis/SQLite. Один з
@@ -17,7 +17,7 @@
 ## Швидкий старт
 
 ```csharp
-using var db = ArxDb.ArxDb.Open("./mydata");
+using var db = NyxilumDb.NyxilumDb.Open("./mydata");
 
 db.Set("greeting", Encoding.UTF8.GetBytes("Привіт!"));
 var value = db.Get("greeting"); // byte[]?
@@ -28,7 +28,7 @@ foreach (var (key, val) in db.Scan("user:"))
 db.Delete("greeting");
 ```
 
-Повний приклад — [samples/ArxDb.Demo](samples/ArxDb.Demo/Program.cs).
+Повний приклад — [samples/NyxilumDb.Demo](samples/NyxilumDb.Demo/Program.cs).
 
 ## Модель довговічності
 
@@ -71,10 +71,10 @@ WAL, що росте вічно, — не варіант для чогось д�
 ## Тести
 
 ```bash
-dotnet run --project tests/ArxDb.Tests
+dotnet run --project tests/NyxilumDb.Tests
 ```
 
-24 перевірки без фреймворку (як `run_all.sh` у ArxLang): перезапуск
+24 перевірки без фреймворку (як `run_all.sh` у NyxilumLang): перезапуск
 процесу з даними, що переживають Close/reopen; обірваний/пошкоджений
 WAL (обрізання на 1/4/9 байт, зіпсований байт усередині запису, сміття
 в кінці) — переконатись, що replay коректно відкидає ТІЛЬКИ хвіст;

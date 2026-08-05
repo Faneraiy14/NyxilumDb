@@ -1,14 +1,14 @@
 using System.Text;
-using ArxDb;
+using NyxilumDb;
 
-var dir = Path.Combine(Path.GetTempPath(), "arxdb-demo");
+var dir = Path.Combine(Path.GetTempPath(), "nyxilumdb-demo");
 Console.WriteLine($"Відкриваю базу в {dir}");
 
-using (var db = ArxDb.ArxDb.Open(dir))
+using (var db = NyxilumDb.NyxilumDb.Open(dir))
 {
     Console.WriteLine($"Записів при відкритті: {db.Count} (recovery: {db.LastRecovery})");
 
-    db.Set("greeting", Encoding.UTF8.GetBytes("Привіт, ArxDb!"));
+    db.Set("greeting", Encoding.UTF8.GetBytes("Привіт, NyxilumDb!"));
     db.Set("user:1", Encoding.UTF8.GetBytes("Святослав"));
     db.Set("user:2", Encoding.UTF8.GetBytes("Аліна"));
 

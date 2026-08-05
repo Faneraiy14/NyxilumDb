@@ -1,10 +1,10 @@
-using ArxDb.Storage;
+using NyxilumDb.Storage;
 
-namespace ArxDb;
+namespace NyxilumDb;
 
 // Embedded key-value сховище з WAL-довговічністю. Одна відкрита теку —
-// одна база: усередині завжди рівно 3 можливих файли (arxdb.snap,
-// arxdb.wal, arxdb.snap.tmp — останній лише під час компакції).
+// одна база: усередині завжди рівно 3 можливих файли (nyxilumdb.snap,
+// nyxilumdb.wal, nyxilumdb.snap.tmp — останній лише під час компакції).
 //
 // Модель конкурентності: один спільний ReaderWriterLockSlim на все
 // сховище (single-writer / multi-reader). Запис WAL відбувається
@@ -13,23 +13,23 @@ namespace ArxDb;
 // могли б потрапити в лог в іншому порядку, ніж застосувались, і
 // replay після падіння відновив би інший фінальний стан, ніж живий
 // процес мав насправді.
-public sealed class ArxDb : IDisposable
+public sealed class NyxilumDb : IDisposable
 {
-    private const string SnapshotFileName = "arxdb.snap";
-    private const string SnapshotTempFileName = "arxdb.snap.tmp";
-    private const string WalFileName = "arxdb.wal";
+    private const string SnapshotFileName = "nyxilumdb.snap";
+    private const string SnapshotTempFileName = "nyxilumdb.snap.tmp";
+    private const string WalFileName = "nyxilumdb.wal";
 
     private readonly ReaderWriterLockSlim _lock = new(LockRecursionPolicy.NoRecursion);
     private readonly MemTable _memTable;
     private readonly WalWriter _wal;
-    private readonly ArxDbOptions _options;
+    private readonly NyxilumDbOptions _options;
     private readonly string _snapshotPath;
     private readonly string _snapshotTempPath;
     private bool _disposed;
 
     public RecoveryInfo LastRecovery { get; }
 
-    private ArxDb(MemTable memTable, WalWriter wal, ArxDbOptions options, string snapshotPath, string snapshotTempPath, RecoveryInfo recovery)
+    private NyxilumDb(MemTable memTable, WalWriter wal, NyxilumDbOptions options, string snapshotPath, string snapshotTempPath, RecoveryInfo recovery)
     {
         _memTable = memTable;
         _wal = wal;
@@ -39,9 +39,9 @@ public sealed class ArxDb : IDisposable
         LastRecovery = recovery;
     }
 
-    public static ArxDb Open(string directoryPath, ArxDbOptions? options = null)
+    public static NyxilumDb Open(string directoryPath, NyxilumDbOptions? options = null)
     {
-        options ??= new ArxDbOptions();
+        options ??= new NyxilumDbOptions();
         Directory.CreateDirectory(directoryPath);
 
         var snapshotPath = Path.Combine(directoryPath, SnapshotFileName);
@@ -82,7 +82,7 @@ public sealed class ArxDb : IDisposable
         var wal = WalWriter.OpenForAppend(walPath, options.FsyncMode);
 
         var recovery = new RecoveryInfo(replay.Records.Count, replay.DiscardedBytes, snapshot != null);
-        var db = new ArxDb(memTable, wal, options, snapshotPath, snapshotTempPath, recovery);
+        var db = new NyxilumDb(memTable, wal, options, snapshotPath, snapshotTempPath, recovery);
 
         // Компакція вже на старті, якщо WAL і так завеликий (напр.
         // процес довго не закривався) — інакше перший-ліпший запис

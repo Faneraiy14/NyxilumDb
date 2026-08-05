@@ -1,9 +1,9 @@
 using System.Diagnostics;
 using System.Text;
-using ArxDb;
-using ArxDb.Storage;
+using NyxilumDb;
+using NyxilumDb.Storage;
 
-// Тестовий раннер без фреймворку (як run_all.sh у ArxEcosystem) — прості
+// Тестовий раннер без фреймворку (як run_all.sh у репозиторії NyxilumLang) — прості
 // check()-и, чіткий підсумок, ненульовий exit-код при провалі.
 
 int failures = 0;
@@ -15,7 +15,7 @@ void Check(string label, bool condition)
     else { Console.WriteLine($"  ❌ {label}"); failures++; }
 }
 
-string TempDir() => Path.Combine(Path.GetTempPath(), "arxdb_test_" + Guid.NewGuid().ToString("N"));
+string TempDir() => Path.Combine(Path.GetTempPath(), "nyxilumdb_test_" + Guid.NewGuid().ToString("N"));
 
 byte[] ValueFor(int i) => Encoding.UTF8.GetBytes($"value-{i}");
 
@@ -23,7 +23,7 @@ byte[] ValueFor(int i) => Encoding.UTF8.GetBytes($"value-{i}");
 if (args.Length > 0 && args[0] == "--crash-child")
 {
     var dir = args[1];
-    using (var db = ArxDb.ArxDb.Open(dir))
+    using (var db = NyxilumDb.NyxilumDb.Open(dir))
     {
         for (int i = 0; i < 300; i++)
             db.Set($"key{i}", ValueFor(i));
@@ -31,7 +31,7 @@ if (args.Length > 0 && args[0] == "--crash-child")
     // Явний Close() уже пройшов вище (using) — щоб перевірити РЕАЛЬНИЙ
     // crash (не акуратне закриття), пишемо ще трохи БЕЗ using і валимо
     // процес одразу після Set(), не даючи Dispose відпрацювати.
-    var db2 = ArxDb.ArxDb.Open(dir);
+    var db2 = NyxilumDb.NyxilumDb.Open(dir);
     for (int i = 300; i < 400; i++)
         db2.Set($"key{i}", ValueFor(i));
     // Environment.FailFast() запускає Windows Error Reporting, яке може
@@ -50,13 +50,13 @@ Console.WriteLine("T1: перезапуск процесу — дані пере
     var dir = TempDir();
     try
     {
-        using (var db = ArxDb.ArxDb.Open(dir))
+        using (var db = NyxilumDb.NyxilumDb.Open(dir))
         {
             for (int i = 0; i < 300; i++) db.Set($"key{i}", ValueFor(i));
             for (int i = 0; i < 30; i++) db.Delete($"key{i}"); // тумбстони для перших 30
         }
 
-        using var reopened = ArxDb.ArxDb.Open(dir);
+        using var reopened = NyxilumDb.NyxilumDb.Open(dir);
         Check("кількість записів після перевідкриття", reopened.Count == 270);
         bool survivorsOk = true, tombstonesOk = true;
         for (int i = 30; i < 300; i++)
@@ -77,12 +77,12 @@ Console.WriteLine("T2: обірваний/пошкоджений WAL — replay 
         // CheckpointOnClose=false: інакше звичайний Close() стиснув би
         // WAL у знімок ДО того, як ми встигнемо його зіпсувати, — тест
         // перевіряв би вже порожній (щойно скомпактований) WAL.
-        var writeOptions = new ArxDbOptions { CheckpointOnClose = false };
-        using (var db = ArxDb.ArxDb.Open(dir, writeOptions))
+        var writeOptions = new NyxilumDbOptions { CheckpointOnClose = false };
+        using (var db = NyxilumDb.NyxilumDb.Open(dir, writeOptions))
         {
             for (int i = 0; i < 50; i++) db.Set($"k{i}", ValueFor(i));
         }
-        var walPath = Path.Combine(dir, "arxdb.wal");
+        var walPath = Path.Combine(dir, "nyxilumdb.wal");
         var fullBytes = File.ReadAllBytes(walPath);
         Check("WAL реально містить 50 записів перед пошкодженням (не скомпактований)", fullBytes.Length > 8);
 
@@ -90,7 +90,7 @@ Console.WriteLine("T2: обірваний/пошкоджений WAL — replay 
         foreach (var cut in new[] { 1, 4, 9 })
         {
             File.WriteAllBytes(walPath, fullBytes[..(fullBytes.Length - cut)]);
-            using var db = ArxDb.ArxDb.Open(dir);
+            using var db = NyxilumDb.NyxilumDb.Open(dir);
             Check($"обрізано {cut} байт: перших 49 ключів вижили", CountSurvivors(db, 49) == 49);
             Check($"обрізано {cut} байт: LastRecovery.DiscardedBytes > 0", db.LastRecovery.DiscardedBytes > 0);
         }
@@ -99,7 +99,7 @@ Console.WriteLine("T2: обірваний/пошкоджений WAL — replay 
         var corrupted = (byte[])fullBytes.Clone();
         corrupted[^5] ^= 0xFF;
         File.WriteAllBytes(walPath, corrupted);
-        using (var db = ArxDb.ArxDb.Open(dir))
+        using (var db = NyxilumDb.NyxilumDb.Open(dir))
         {
             Check("пошкоджено байт останнього запису: попередні 49 вижили", CountSurvivors(db, 49) == 49);
             Check("пошкоджено байт: DiscardedBytes > 0", db.LastRecovery.DiscardedBytes > 0);
@@ -108,7 +108,7 @@ Console.WriteLine("T2: обірваний/пошкоджений WAL — replay 
         // Варіант C: дописати сміття в кінець
         var withGarbage = fullBytes.Concat(Enumerable.Repeat((byte)0x7A, 200)).ToArray();
         File.WriteAllBytes(walPath, withGarbage);
-        using (var db = ArxDb.ArxDb.Open(dir))
+        using (var db = NyxilumDb.NyxilumDb.Open(dir))
         {
             Check("сміття в кінці WAL: усі 50 ключів вижили", CountSurvivors(db, 50) == 50);
         }
@@ -154,11 +154,11 @@ Console.WriteLine("T3: реальний crash дочірнього процес�
         // покриває цю ОС-специфічну затримку, а не приховує реальну
         // проблему бібліотеки (сама бібліотека нічого спільного з цим
         // не має — це чисто питання, коли ОС фактично звільнить файл).
-        ArxDb.ArxDb? db = null;
+        NyxilumDb.NyxilumDb? db = null;
         Exception? lastError = null;
         for (int attempt = 0; attempt < 100 && db == null; attempt++)
         {
-            try { db = ArxDb.ArxDb.Open(dir); }
+            try { db = NyxilumDb.NyxilumDb.Open(dir); }
             catch (IOException ex) { lastError = ex; Thread.Sleep(200); }
         }
         if (db == null)
@@ -176,13 +176,13 @@ Console.WriteLine("T4: компакція — знімок створюєтьс�
     var dir = TempDir();
     try
     {
-        var options = new ArxDbOptions { CheckpointThresholdBytes = 2048 };
-        using (var db = ArxDb.ArxDb.Open(dir, options))
+        var options = new NyxilumDbOptions { CheckpointThresholdBytes = 2048 };
+        using (var db = NyxilumDb.NyxilumDb.Open(dir, options))
         {
             for (int i = 0; i < 500; i++) db.Set($"ckpt{i}", ValueFor(i));
         }
-        var snapPath = Path.Combine(dir, "arxdb.snap");
-        var walPath = Path.Combine(dir, "arxdb.wal");
+        var snapPath = Path.Combine(dir, "nyxilumdb.snap");
+        var walPath = Path.Combine(dir, "nyxilumdb.wal");
         Check("знімок створено", File.Exists(snapPath));
         Check("WAL стиснувся до розміру заголовка", new FileInfo(walPath).Length == 8);
 
@@ -190,14 +190,14 @@ Console.WriteLine("T4: компакція — знімок створюєтьс�
         // живуть до кінця зовнішнього блоку одночасно, і другий Open()
         // намагається відкрити той самий WAL-файл, поки перший ще
         // тримає його (FileShare.Read не дає іншому writer'у зайти).
-        using (var reopened = ArxDb.ArxDb.Open(dir, options))
+        using (var reopened = NyxilumDb.NyxilumDb.Open(dir, options))
         {
             Check("після компакції + reopen дані цілі", CountSurvivors(reopened, 500) == 500);
         }
 
         // Reopen одразу ПІСЛЯ компакції (без нових записів) — перевіряє
         // ідемпотентний шлях "WAL уже порожній, усе зі знімка".
-        using (var reopenedAgain = ArxDb.ArxDb.Open(dir, options))
+        using (var reopenedAgain = NyxilumDb.NyxilumDb.Open(dir, options))
         {
             Check("повторне відкриття після компакції теж ціле", CountSurvivors(reopenedAgain, 500) == 500);
         }
@@ -214,7 +214,7 @@ Console.WriteLine("T5: конкурентні читачі/писачі не к�
         // деадлоку/пошкодження), а не довговічність — реальний fsync на
         // кожен запис тут не потрібен і лише додає ~8мс/запис, не
         // перевіряючи нічого додаткового про потокобезпеку.
-        using var db = ArxDb.ArxDb.Open(dir, new ArxDbOptions { FsyncMode = FsyncMode.OsBuffered });
+        using var db = NyxilumDb.NyxilumDb.Open(dir, new NyxilumDbOptions { FsyncMode = FsyncMode.OsBuffered });
         const int writers = 4, perWriter = 300;
         var tasks = new List<Task>();
         var stopReaders = new CancellationTokenSource();
@@ -283,8 +283,8 @@ Console.WriteLine("T6: fuzz проти Dictionary-оракула з період
         // Немає реального crash між reopen — це нормальний Dispose+Open,
         // тож OsBuffered достатньо (перевіряємо консистентність стану
         // між сесіями, не durability проти збою живлення).
-        var fuzzOptions = new ArxDbOptions { FsyncMode = FsyncMode.OsBuffered };
-        var db = ArxDb.ArxDb.Open(dir, fuzzOptions);
+        var fuzzOptions = new NyxilumDbOptions { FsyncMode = FsyncMode.OsBuffered };
+        var db = NyxilumDb.NyxilumDb.Open(dir, fuzzOptions);
         try
         {
             for (int op = 0; op < 600; op++)
@@ -292,7 +292,7 @@ Console.WriteLine("T6: fuzz проти Dictionary-оракула з період
                 if (op % 150 == 149)
                 {
                     db.Dispose();
-                    db = ArxDb.ArxDb.Open(dir, fuzzOptions);
+                    db = NyxilumDb.NyxilumDb.Open(dir, fuzzOptions);
                 }
 
                 var key = $"fuzz{rnd.Next(50)}";
@@ -325,7 +325,7 @@ Console.WriteLine("======================================");
 Console.WriteLine($"Успішно: {passed} | Провалено: {failures}");
 return failures > 0 ? 1 : 0;
 
-int CountSurvivors(ArxDb.ArxDb db, int expectedCount)
+int CountSurvivors(NyxilumDb.NyxilumDb db, int expectedCount)
 {
     int count = 0;
     for (int i = 0; i < expectedCount + 200; i++) // трохи запасу на випадок неочікуваних ключів

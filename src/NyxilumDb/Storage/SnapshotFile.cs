@@ -1,7 +1,7 @@
 using System.Buffers.Binary;
 using System.Text;
 
-namespace ArxDb.Storage;
+namespace NyxilumDb.Storage;
 
 // Знімок (checkpoint) поточного стану в пам'яті — після нього WAL
 // можна безпечно обрізати до заголовка. Формат:
@@ -11,7 +11,7 @@ namespace ArxDb.Storage;
 //
 // Знімок БЕЗ валідного футера повністю ігнорується при відкритті —
 // саме так напівзаписаний .snap.tmp (збій живлення посеред запису
-// знімка) стає нешкідливим: ArxDb.Open просто відкидає його і
+// знімка) стає нешкідливим: NyxilumDb.Open просто відкидає його і
 // відновлюється зі старого знімка (якого щойно записаний .tmp ще не
 // встиг замінити через File.Move) плюс WAL.
 public static class SnapshotFile
