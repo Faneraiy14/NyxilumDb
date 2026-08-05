@@ -3,7 +3,7 @@
 Легка embedded key-value база даних на C#/.NET з Write-Ahead Log (WAL)
 для довговічності — натхненна внутрішнім устроєм Redis/SQLite. Один з
 трьох "проєктів з нуля", запропонованих AI-оглядом GitHub-профілю
-(інші два: [arx-mcp](https://github.com/Faneraiy14/ArxMcp) — уже
+(інші два: [nyxilum-mcp](https://github.com/Faneraiy14/NyxilumMcp) — уже
 готовий; власний HTTP-сервер — поки в беклозі).
 
 ## Чому не просто `Dictionary` з `File.WriteAllText`
