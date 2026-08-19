@@ -320,6 +320,28 @@ Console.WriteLine("T6: fuzz проти Dictionary-оракула з період
     finally { Directory.Delete(dir, true); }
 }
 
+Console.WriteLine("T7: Set() не тримає посилання на масив виклику (захисна копія на вході)");
+{
+    var dir = TempDir();
+    try
+    {
+        using var db = NyxilumDb.NyxilumDb.Open(dir);
+
+        var buf = Encoding.UTF8.GetBytes("hello");
+        db.Set("aliasing", buf);
+        // Викликач мутує свій ВЛАСНИЙ масив ПІСЛЯ Set() (напр. перевикористовує
+        // буфер для наступного значення) - без захисної копії на вході це тихо
+        // псує те, що вже "збережено" в пам'яті (симетрично до того, чому
+        // TryGet() копіює НАЗОВНІ - див. коментар у NyxilumDb.Set()).
+        buf[0] = (byte)'X';
+
+        var readBack = db.Get("aliasing");
+        Check("мутація зовнішнього масиву після Set() не псує збережене значення",
+            readBack != null && Encoding.UTF8.GetString(readBack) == "hello");
+    }
+    finally { Directory.Delete(dir, true); }
+}
+
 Console.WriteLine();
 Console.WriteLine("======================================");
 Console.WriteLine($"Успішно: {passed} | Провалено: {failures}");

@@ -135,11 +135,20 @@ public sealed class NyxilumDb : IDisposable
         if (value.Length > _options.MaxValueBytes)
             throw new ArgumentException($"Значення завелике: {value.Length} байт, максимум {_options.MaxValueBytes}");
 
+        // Захисна копія ДО збереження, дзеркально до TryGet() (та копіює
+        // НАЗОВНІ) - без цього виклик, який мутує свій масив ПІСЛЯ Set()
+        // (напр. перевикористовує буфер для наступного значення), тихо
+        // псував би те, що вже "збережено" в пам'яті: MemTable.Set()
+        // кладе саме це посилання, WAL-запис на диску лишається коректним
+        // (записується одразу), але Get() після такої мутації повертав би
+        // зіпсовані дані з пам'яті, що розходяться з тим, що на диску.
+        var stored = (byte[])value.Clone();
+
         _lock.EnterWriteLock();
         try
         {
-            _wal.Append(new WalRecord { Op = WalOp.Set, Key = key, Value = value });
-            _memTable.Set(key, value);
+            _wal.Append(new WalRecord { Op = WalOp.Set, Key = key, Value = stored });
+            _memTable.Set(key, stored);
             MaybeCheckpointLocked();
         }
         finally { _lock.ExitWriteLock(); }
