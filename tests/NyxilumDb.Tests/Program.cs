@@ -342,6 +342,31 @@ Console.WriteLine("T7: Set() не тримає посилання на маси�
     finally { Directory.Delete(dir, true); }
 }
 
+Console.WriteLine("T8: Scan()/Range() не віддають живе посилання на внутрішнє сховище");
+{
+    var dir = TempDir();
+    try
+    {
+        using var db = NyxilumDb.NyxilumDb.Open(dir);
+        db.Set("user:1", Encoding.UTF8.GetBytes("original"));
+
+        var scanResults = db.Scan("user:");
+        scanResults[0].Value[0] = (byte)'X'; // мутуємо значення з РЕЗУЛЬТАТУ Scan(), не через Set()
+
+        var afterScanMutation = db.Get("user:1");
+        Check("мутація значення з результату Scan() не псує стан бази",
+            afterScanMutation != null && Encoding.UTF8.GetString(afterScanMutation) == "original");
+
+        var rangeResults = db.Range("user:0", "user:9");
+        rangeResults[0].Value[0] = (byte)'Y'; // те саме для Range()
+
+        var afterRangeMutation = db.Get("user:1");
+        Check("мутація значення з результату Range() не псує стан бази",
+            afterRangeMutation != null && Encoding.UTF8.GetString(afterRangeMutation) == "original");
+    }
+    finally { Directory.Delete(dir, true); }
+}
+
 Console.WriteLine();
 Console.WriteLine("======================================");
 Console.WriteLine($"Успішно: {passed} | Провалено: {failures}");

@@ -178,15 +178,30 @@ public sealed class NyxilumDb : IDisposable
     public IReadOnlyList<KeyValuePair<string, byte[]>> Scan(string prefix)
     {
         _lock.EnterReadLock();
-        try { return _memTable.Scan(prefix); }
+        try { return CloneValues(_memTable.Scan(prefix)); }
         finally { _lock.ExitReadLock(); }
     }
 
     public IReadOnlyList<KeyValuePair<string, byte[]>> Range(string startInclusive, string endExclusive)
     {
         _lock.EnterReadLock();
-        try { return _memTable.Range(startInclusive, endExclusive); }
+        try { return CloneValues(_memTable.Range(startInclusive, endExclusive)); }
         finally { _lock.ExitReadLock(); }
+    }
+
+    // Той самий аліасинг-ризик, що й у TryGet() (захисна копія назовні) —
+    // MemTable.Scan()/Range() повертають KeyValuePair, чиї byte[]-значення
+    // це ЖИВІ посилання на внутрішнє сховище, не копії. Без клонування тут
+    // виклик, що мутує елемент отриманого списку (напр. results[0].Value[0]
+    // = ...), псував би пам'ять бази напряму — повз Set()/WAL, отже й без
+    // сліду в лозі: Get() того самого ключа після такої мутації повертав би
+    // зіпсоване значення, яке ніколи насправді не записувалось.
+    private static List<KeyValuePair<string, byte[]>> CloneValues(List<KeyValuePair<string, byte[]>> source)
+    {
+        var result = new List<KeyValuePair<string, byte[]>>(source.Count);
+        foreach (var kv in source)
+            result.Add(new KeyValuePair<string, byte[]>(kv.Key, (byte[])kv.Value.Clone()));
+        return result;
     }
 
     private void MaybeCheckpointLocked()
