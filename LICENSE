@@ -19,3 +19,17 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+## Additional Notice
+
+This notice applies to copies of this software obtained after the notice
+was added; it does not revoke rights already granted under the MIT
+License above to anyone who obtained a copy before this notice existed.
+
+Beyond the MIT terms above, the author does not permit:
+- scraping, mirroring, or listing this project by third-party
+  aggregator/directory platforms without prior written permission, or
+- including this project in datasets used to train machine learning
+  models, without prior written permission.
