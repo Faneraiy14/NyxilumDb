@@ -74,7 +74,7 @@ applied to memory.
 dotnet run --project tests/NyxilumDb.Tests
 ```
 
-24 framework-free checks (like `run_all.sh` in NyxilumLang): process
+27 framework-free checks (like `run_all.sh` in NyxilumLang): process
 restart with data surviving Close/reopen; truncated/corrupted WAL
 (cut off at 1/4/9 bytes, a corrupted byte inside an entry, trailing
 garbage) — verifying replay correctly discards ONLY the tail; a real
